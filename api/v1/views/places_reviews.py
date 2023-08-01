@@ -1,88 +1,43 @@
 #!/usr/bin/python3
-"""
-View for Reviews that handles all RESTful API actions
-"""
-
-from flask import jsonify, request, abort
-from models import storage
-from models.review import Review
+"""reviews routes module"""
 from api.v1.views import app_views
+from api.v1.views import *
+from flask import jsonify, make_response, abort, request
+from models import storage
+
+model = "Review"
+parent_model = "Place"
 
 
-@app_views.route('/places/<place_id>/reviews', methods=['GET'],
-                 strict_slashes=False)
-def reviews_all(place_id):
-    """ returns list of all Review objects """
-    place = storage.get("Place", place_id)
-    if place is None:
-        abort(404)
-    reviews_all = []
-    reviews = storage.all("Review").values()
-    for review in reviews:
-        if review.place_id == place_id:
-            reviews_all.append(review.to_json())
-    return jsonify(reviews_all)
+@app_views.route("/places/<place_id>/reviews", strict_slashes=False,
+                 methods=["GET"])
+def retrieve_reviews(place_id):
+    """[GET] Retrieves a list of all City objects linked to a place"""
+    return retrieve_models(parent_model, place_id, "reviews")
 
 
-@app_views.route('/reviews/<review_id>', methods=['GET'])
-def review_get(review_id):
-    """ handles GET method """
-    review = storage.get("Review", review_id)
-    if review is None:
-        abort(404)
-    review = review.to_json()
-    return jsonify(review)
+@app_views.route("/reviews/<review_id>", methods=["GET"])
+def retrieve_review(review_id):
+    """[GET] Retrieves a list of all City objects"""
+    return retrieve_model(model, review_id)
 
 
-@app_views.route('/reviews/<review_id>', methods=['DELETE'])
-def review_delete(review_id):
-    """ handles DELETE method """
-    empty_dict = {}
-    review = storage.get("Review", review_id)
-    if review is None:
-        abort(404)
-    storage.delete(review)
-    storage.save()
-    return jsonify(empty_dict), 200
+@app_views.route("/reviews/<review_id>", methods=["DELETE"])
+def del_review(review_id):
+    """[DELETE] - deletes a review object with specified id"""
+    return del_model(model, review_id)
 
 
-@app_views.route('/places/<place_id>/reviews', methods=['POST'],
-                 strict_slashes=False)
-def review_post(place_id):
-    """ handles POST method """
-    place = storage.get("Place", place_id)
-    if place is None:
-        abort(404)
-    data = request.get_json()
-    if data is None:
-        abort(400, "Not a JSON")
-    if 'user_id' not in data:
-        abort(400, "Missing user_id")
-    user = storage.get("User", data['user_id'])
-    if user is None:
-        abort(404)
-    if 'text' not in data:
-        abort(400, "Missing text")
-    review = Review(**data)
-    review.place_id = place_id
-    review.save()
-    review = review.to_json()
-    return jsonify(review), 201
+@app_views.route("/places/<place_id>/reviews", strict_slashes=False,
+                 methods=["POST"])
+def create_review(place_id):
+    """[POST] - adds a review object"""
+    required_data = {"text", "user_id"}
+    return create_model(model, parent_model, place_id, required_data)
 
 
-@app_views.route('/reviews/<review_id>', methods=['PUT'])
-def review_put(review_id):
-    """ handles PUT method """
-    review = storage.get("Review", review_id)
-    if review is None:
-        abort(404)
-    data = request.get_json()
-    if data is None:
-        abort(400, "Not a JSON")
-    for key, value in data.items():
-        ignore_keys = ["id", "user_id", "place_id", "created_at", "updated_at"]
-        if key not in ignore_keys:
-            review.bm_update(key, value)
-    review.save()
-    review = review.to_json()
-    return jsonify(review), 200
+@app_views.route("/reviews/<review_id>", methods=["PUT"])
+def update_review(review_id):
+    """[PUT] - updates a review object"""
+    auto_data = ["id", "created_at", "updated_at", "user_id", "place_id"]
+    return update_model(model, review_id, auto_data)
