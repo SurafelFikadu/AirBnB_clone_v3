@@ -3,19 +3,20 @@
 App views for AirBnB_clone_v3
 """
 
+from flask import Flask
 from flask import jsonify
 from models import storage
 from api.v1.views import app_views
 
 
-@app_views.route('/status')
+@app_views.route('/status', strict_slashes=False)
 def status():
     """ returns status """
     status = {"status": "OK"}
     return jsonify(status)
 
 
-@app_views.route('/stats')
+@app_views.route('/stats', strict_slashes=False)
 def count():
     """ returns number of each objects by type """
     total = {}
